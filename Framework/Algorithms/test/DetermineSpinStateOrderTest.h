@@ -8,7 +8,9 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "MantidAPI/WorkspaceGroup.h"
 #include "MantidAlgorithms/DetermineSpinStateOrder.h"
+#include "MantidFrameworkTestHelpers/WorkspaceCreationHelper.h"
 
 using Mantid::Algorithms::DetermineSpinStateOrder;
 
@@ -25,28 +27,32 @@ public:
     TS_ASSERT(alg.isInitialized())
   }
 
-  void test_exec() {
-    // Create test input if necessary by filling in appropriate code below.
-    // Consider using MantidFrameworkTestHelpers/WorkspaceCreationHelper.h
-    // MatrixWorkspace_sptr inputWS =
+  void test_validateInputs_inputWorkspaceSize() {
+    const auto groupWsWithThreeItems = WorkspaceCreationHelper::createWorkspaceGroup(3, 1, 10, "three_items");
 
     DetermineSpinStateOrder alg;
-    // Don't put output in ADS by default
-    alg.setChild(true);
-    TS_ASSERT_THROWS_NOTHING(alg.initialize())
-    TS_ASSERT(alg.isInitialized())
-    TS_ASSERT_THROWS_NOTHING(alg.setProperty("InputWorkspace", inputWS));
-    TS_ASSERT_THROWS_NOTHING(alg.setPropertyValue("OutputWorkspace", "_unused_for_child"));
-    TS_ASSERT_THROWS_NOTHING(alg.execute(););
-    TS_ASSERT(alg.isExecuted());
+    alg.initialize();
+    alg.setProperty("InputWorkspace", groupWsWithThreeItems);
 
-    // Retrieve the workspace from the algorithm. The type here will probably need to change. It should
-    // be the type using in declareProperty for the "OutputWorkspace" type.
-    // We can't use auto as it's an implicit conversion.
-    Workspace_sptr outputWS = alg.getProperty("OutputWorkspace");
-    TS_ASSERT(outputWS);
-    TS_FAIL("TODO: Check the results and remove this line");
+    auto errors = alg.validateInputs();
+    TS_ASSERT(!errors.empty())
+    TS_ASSERT_EQUALS(errors["InputWorkspace"], "Input workspace group must have 4 entries (PA data)")
+    WorkspaceCreationHelper::removeWS("three_items");
   }
 
-  void test_Something() { TS_FAIL("You forgot to write a test!"); }
+  void test_validateInputs_unsupportedInstrument() {
+    auto wsGroupOsiris = std::make_shared<Mantid::API::WorkspaceGroup>();
+    for (int i = 0; i < 4; ++i) {
+      const auto ws = WorkspaceCreationHelper::create2DWorkspaceWithFullInstrument(1, 10, false, false, true, "OSIRIS");
+      wsGroupOsiris->addWorkspace(ws);
+    }
+
+    DetermineSpinStateOrder alg;
+    alg.initialize();
+    alg.setProperty("InputWorkspace", wsGroupOsiris);
+
+    auto errors = alg.validateInputs();
+    TS_ASSERT(!errors.empty())
+    TS_ASSERT_EQUALS(errors["InputWorkspace"], "Sub workspaces must be data from either LARMOR or ZOOM")
+  }
 };
