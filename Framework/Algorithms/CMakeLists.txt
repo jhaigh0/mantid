@@ -236,6 +236,7 @@ set(SRC_FILES
     src/Plus.cpp
     src/PointByPointVCorrection.cpp
     src/PoissonErrors.cpp
+    src/PolarizationCalculateTransmission.cpp
     src/PolarizationCorrectionFredrikze.cpp
     src/PolarizationCorrectionWildes.cpp
     src/PolarizationCorrections/DepolarizedAnalyserTransmission.cpp
@@ -592,6 +593,7 @@ set(INC_FILES
     inc/MantidAlgorithms/Plus.h
     inc/MantidAlgorithms/PointByPointVCorrection.h
     inc/MantidAlgorithms/PoissonErrors.h
+    inc/MantidAlgorithms/PolarizationCalculateTransmission.h
     inc/MantidAlgorithms/PolarizationCorrectionFredrikze.h
     inc/MantidAlgorithms/PolarizationCorrectionWildes.h
     inc/MantidAlgorithms/PolarizationCorrections/DepolarizedAnalyserTransmission.h
@@ -943,6 +945,7 @@ set(TEST_FILES
     PlusTest.h
     PointByPointVCorrectionTest.h
     PoissonErrorsTest.h
+    PolarizationCalculateTransmissionTest.h
     PolarizationCorrectionFredrikzeTest.h
     PolarizationCorrectionWildesTest.h
     PolarizationCorrections/DepolarizedAnalyserTransmissionTest.h
