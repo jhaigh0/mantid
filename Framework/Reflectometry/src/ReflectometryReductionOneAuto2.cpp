@@ -102,60 +102,6 @@ const std::string ReflectometryReductionOneAuto2::summary() const {
          "properties";
 }
 
-/** Validate transmission runs
- *
- * @return :: result of the validation as a map
- */
-std::map<std::string, std::string> ReflectometryReductionOneAuto2::validateInputs() {
-
-  std::map<std::string, std::string> results;
-
-  // Validate transmission runs only if our input workspace is a group
-  if (!checkGroups())
-    return results;
-
-  auto group = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(getPropertyValue("InputWorkspace"));
-  if (!group)
-    return results;
-
-  // First transmission run
-  const std::string firstStr = getPropertyValue("FirstTransmissionRun");
-  if (!firstStr.empty()) {
-    auto firstTransGroup = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(firstStr);
-    // If it is not a group, we don't need to validate its size
-    if (!firstTransGroup)
-      return results;
-
-    const bool polarizationCorrections = getPropertyValue("PolarizationAnalysis") != "None";
-
-    if (group->size() != firstTransGroup->size() && !polarizationCorrections) {
-      // If they are not the same size then we cannot associate a transmission
-      // group member with every input group member.
-      results["FirstTransmissionRun"] = "FirstTransmissionRun group must be the "
-                                        "same size as the InputWorkspace group "
-                                        "when polarization analysis is 'None'.";
-    }
-  }
-
-  // The same for the second transmission run
-  const std::string secondStr = getPropertyValue("SecondTransmissionRun");
-  if (!secondStr.empty()) {
-    auto secondTransGroup = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(secondStr);
-    // If it is not a group, we don't need to validate its size
-    if (!secondTransGroup)
-      return results;
-    const bool polarizationCorrections = getPropertyValue("PolarizationAnalysis") != "None";
-
-    if (group->size() != secondTransGroup->size() && !polarizationCorrections) {
-      results["SecondTransmissionRun"] = "SecondTransmissionRun group must be the "
-                                         "same size as the InputWorkspace group "
-                                         "when polarization analysis is 'None'.";
-    }
-  }
-
-  return results;
-}
-
 std::string ReflectometryReductionOneAuto2::getRunNumberForWorkspaceGroup(const WorkspaceGroup_const_sptr &group) {
   // Return the run number for the first child workspace
   if (!group)
@@ -713,13 +659,50 @@ bool ReflectometryReductionOneAuto2::checkGroups() {
 
   const std::string wsName = getPropertyValue("InputWorkspace");
 
+  WorkspaceGroup_sptr inputGroup;
   try {
-    auto ws = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(wsName);
-    if (ws)
-      return true;
+    inputGroup = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(wsName);
+    if (!inputGroup)
+      return false;
   } catch (...) {
   }
-  return false;
+
+  // First transmission run
+  const std::string firstStr = getPropertyValue("FirstTransmissionRun");
+  if (!firstStr.empty()) {
+    auto firstTransGroup = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(firstStr);
+    // If it is not a group, we don't need to validate its size
+    if (!firstTransGroup)
+      return true;
+
+    const bool polarizationCorrections = getPropertyValue("PolarizationAnalysis") != "None";
+
+    if (inputGroup->size() != firstTransGroup->size() && !polarizationCorrections) {
+      // If they are not the same size then we cannot associate a transmission
+      // group member with every input group member.
+      throw std::invalid_argument("FirstTransmissionRun group must be the "
+                                  "same size as the InputWorkspace group "
+                                  "when polarization analysis is 'None'.");
+    }
+  }
+
+  // The same for the second transmission run
+  const std::string secondStr = getPropertyValue("SecondTransmissionRun");
+  if (!secondStr.empty()) {
+    auto secondTransGroup = AnalysisDataService::Instance().retrieveWS<WorkspaceGroup>(secondStr);
+    // If it is not a group, we don't need to validate its size
+    if (!secondTransGroup)
+      return true;
+    const bool polarizationCorrections = getPropertyValue("PolarizationAnalysis") != "None";
+
+    if (inputGroup->size() != secondTransGroup->size() && !polarizationCorrections) {
+      throw std::invalid_argument("SecondTransmissionRun group must be the "
+                                  "same size as the InputWorkspace group "
+                                  "when polarization analysis is 'None'.");
+    }
+  }
+
+  return true;
 }
 
 void ReflectometryReductionOneAuto2::setOutputWorkspaces(WorkspaceNames const &outputGroupNames,

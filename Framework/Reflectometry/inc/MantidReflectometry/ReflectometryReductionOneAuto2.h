@@ -26,9 +26,6 @@ public:
   const std::string category() const override;
   const std::string summary() const override;
 
-  /// Validate inputs
-  std::map<std::string, std::string> validateInputs() override;
-
   /// For (multiperiod) workspace groups
   bool checkGroups() override;
   bool processGroups() override;
