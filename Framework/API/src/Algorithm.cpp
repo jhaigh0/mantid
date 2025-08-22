@@ -338,8 +338,22 @@ std::map<std::string, std::string> Algorithm::validateInputs() { return std::map
  */
 std::map<std::string, std::string> Algorithm::validate() {
   this->cacheWorkspaceProperties();
+  bool groupsFound = false;
+  try {
+    groupsFound = this->checkGroups();
+  } catch (std::exception &ex) {
+    getLogger().error() << "Error found when checking group inputs"
+                        << "\n"
+                        << ex.what() << "\n";
+    std::map<std::string, std::string> inputErrors;
+    for (IWorkspaceProperty *iProp : m_inputWorkspaceProps) {
+      auto *prop = dynamic_cast<Property *>(iProp);
+      inputErrors[prop->name()] = ex.what();
+    }
+    return inputErrors;
+  }
 
-  if (!this->checkGroups()) {
+  if (!groupsFound) {
     return this->validateInputs();
   }
 

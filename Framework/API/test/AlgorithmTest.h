@@ -870,6 +870,14 @@ public:
                      "InputWorkspace2 (A20) must not start with the same letter as InputWorkspace1 (A2)");
   }
 
+  void test_validate_failsWhenGroupsAreDiffernetSizes() {
+    const auto result = doTestValidateWithGroups("A", "A1,A2,A3", "B", "B1,B2");
+    const std::string resultInput1 = result.at("InputWorkspace1");
+    const std::string resultInput2 = result.at("InputWorkspace2");
+    TS_ASSERT(resultInput1.find("Input WorkspaceGroups are not of the same size.") != std::string::npos);
+    TS_ASSERT(resultInput2.find("Input WorkspaceGroups are not of the same size.") != std::string::npos);
+  }
+
   void doHistoryCopyTest(const std::string &inputWSName, const std::string &outputWSName) {
     auto inputWS = std::make_shared<WorkspaceTester>();
     inputWS->history().addHistory(
