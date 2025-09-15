@@ -157,6 +157,7 @@ set(SRC_FILES
     src/WorkspaceNearestNeighbourInfo.cpp
     src/WorkspaceNearestNeighbours.cpp
     src/WorkspaceOpOverloads.cpp
+    src/WorkspacePropertiesStrategist.cpp
     src/WorkspaceProperty.cpp
     src/WorkspacePropertyUtils.cpp
     src/WorkspaceUnitValidator.cpp
@@ -362,6 +363,7 @@ set(INC_FILES
     inc/MantidAPI/WorkspaceNearestNeighbourInfo.h
     inc/MantidAPI/WorkspaceNearestNeighbours.h
     inc/MantidAPI/WorkspaceOpOverloads.h
+    inc/MantidAPI/WorkspacePropertiesStrategist.h
     inc/MantidAPI/WorkspaceProperty.h
     inc/MantidAPI/WorkspaceProperty.hxx
     inc/MantidAPI/WorkspacePropertyUtils.h
@@ -485,6 +487,7 @@ set(TEST_FILES
     WorkspaceNearestNeighbourInfoTest.h
     WorkspaceNearestNeighboursTest.h
     WorkspaceOpOverloadsTest.h
+    WorkspacePropertiesStrategistTest.h
     WorkspacePropertyTest.h
     WorkspacePropertyUtilsTest.h
     WorkspaceUnitValidatorTest.h
