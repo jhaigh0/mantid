@@ -39,7 +39,7 @@ void WorkspacePropertiesStrategist::setupGroupOutputs() {
 
   std::map<std::string, WorkspaceGroup_sptr> outputWorkspaceGroups;
   for (const auto workspaceOutputProperty : m_inAndOutProperties.workspacesOut) {
-    const auto prop = std::dynamic_pointer_cast<Property>(workspaceOutputProperty);
+    const auto prop = dynamic_cast<Property *>(workspaceOutputProperty);
     if (prop && !prop->value().empty()) {
       auto outputWorkspaceGroup = std::make_shared<WorkspaceGroup>();
       outputWorkspaceGroups[prop->name()] = outputWorkspaceGroup;
@@ -50,7 +50,7 @@ void WorkspacePropertiesStrategist::setupGroupOutputs() {
   for (const auto inAndOutSet : m_strategy) {
     const auto outProperties = inAndOutSet.workspacesOut;
     for (const auto outProperty : outProperties) {
-      const auto prop = std::dynamic_pointer_cast<Property>(outProperty);
+      const auto prop = dynamic_cast<Property *>(outProperty);
       if (prop && !prop->value().empty()) {
         const auto outGroup = outputWorkspaceGroups[prop->name()];
         // TODO error handling if workspace doesn't exist.
@@ -85,11 +85,10 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
         ws = unrolledWorkspaces[0];
         insAndOuts.workspacesIn.push_back(inputPropertyInfo.inputProperty);
       } else {
-        const auto prop = std::dynamic_pointer_cast<Property>(inputPropertyInfo.inputProperty);
+        const auto prop = dynamic_cast<Property *>(inputPropertyInfo.inputProperty);
         ws = unrolledWorkspaces[i];
         // Does this need to be specifically a matrix workspace, event workspace etc. property?
-        const auto wsProp =
-            std::make_shared<WorkspaceProperty<Workspace>>(prop->name(), ws->getName(), Direction::Input);
+        const auto wsProp = new WorkspaceProperty<Workspace>(prop->name(), ws->getName(), Direction::Input);
         wsProp->setDataItem(ws);
         insAndOuts.workspacesIn.push_back(wsProp);
       }
@@ -99,7 +98,7 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
     }
 
     for (const auto workspaceOutputProperty : m_inAndOutProperties.workspacesOut) {
-      const auto prop = std::dynamic_pointer_cast<Property>(workspaceOutputProperty);
+      const auto prop = dynamic_cast<Property *>(workspaceOutputProperty);
       const std::string providedName = prop->value();
       if (providedName.empty()) {
         // TODO need to add an empty output prop???
@@ -118,7 +117,7 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
       const auto matchingInputPropertyInfo =
           std::find_if(m_inputWorkspaceProperties.cbegin(), m_inputWorkspaceProperties.cend(),
                        [&providedName](const auto &inputPropertyInfo) {
-                         if (const auto prop = std::dynamic_pointer_cast<Property>(inputPropertyInfo.inputProperty)) {
+                         if (const auto prop = dynamic_cast<Property *>(inputPropertyInfo.inputProperty)) {
                            return prop->value() == providedName;
                          }
                          return false;
@@ -128,8 +127,7 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
         childWorkspaceName = unrolledWorkspaces[i]->getName();
       }
 
-      const auto outputWsProp =
-          std::make_shared<WorkspaceProperty<Workspace>>(prop->name(), childWorkspaceName, Direction::Output);
+      const auto outputWsProp = new WorkspaceProperty<Workspace>(prop->name(), childWorkspaceName, Direction::Output);
       insAndOuts.workspacesOut.push_back(outputWsProp);
     }
 
@@ -174,8 +172,8 @@ WorkspacePropertiesStrategist::collateInputWorkspaceInfo(const WorkspaceProperti
     InputPropertyInfo inputInfo;
     inputInfo.inputProperty = inputWorkspaceProperty;
 
-    const auto prop = std::dynamic_pointer_cast<Property>(inputWorkspaceProperty);
-    const auto wsGroupProp = std::dynamic_pointer_cast<WorkspaceProperty<WorkspaceGroup>>(prop);
+    const auto prop = dynamic_cast<Property *>(inputWorkspaceProperty);
+    const auto wsGroupProp = dynamic_cast<WorkspaceProperty<WorkspaceGroup> *>(prop);
     const auto ws = inputWorkspaceProperty->getWorkspace();
     auto wsGroup = std::dynamic_pointer_cast<WorkspaceGroup>(ws);
 

@@ -14,6 +14,7 @@
 #include "MantidAPI/IWorkspaceProperty.h"
 #include "MantidAPI/WorkspaceGroup.h"
 #include "MantidAPI/WorkspaceHistory.h"
+#include "MantidAPI/WorkspacePropertiesStrategist.h"
 #include "MantidAPI/WorkspacePropertyUtils.h"
 
 #include "MantidJson/Json.h"
@@ -578,16 +579,12 @@ bool Algorithm::executeInternal() {
   cacheWorkspaceProperties();
   cacheInputWorkspaceHistories();
 
-  // ----- Check for processing groups -------------
-  // default true so that it has the right value at the check below the catch
-  // block should checkGroups throw
-  bool callProcessGroups = true;
+  m_strategist = createWorkspaceStrategist();
   try {
-    // Checking the input is a group. Throws if the sizes are wrong
-    callProcessGroups = this->checkGroups();
-  } catch (std::exception &ex) {
-    getLogger().error() << "Error in execution of algorithm " << this->name() << "\n" << ex.what() << "\n";
-    notificationCenter().postNotification(new ErrorNotification(this, ex.what()));
+    m_strategy = m_strategist->createInputOutputStrategy();
+  } catch (std::invalid_argument &e) {
+    getLogger().error() << "Error in execution of algorithm " << this->name() << "\n" << e.what() << "\n";
+    notificationCenter().postNotification(new ErrorNotification(this, e.what()));
     setResultState(ResultState::Failed);
     if (m_isChildAlgorithm || m_runningAsync || m_rethrow) {
       m_runningAsync = false;
@@ -596,7 +593,28 @@ bool Algorithm::executeInternal() {
     return false;
   }
 
+  // ----- Check for processing groups -------------
+  // default true so that it has the right value at the check below the catch
+  // block should checkGroups throw
+  // bool callProcessGroups = true;
+  // try {
+  //  // Checking the input is a group. Throws if the sizes are wrong
+  //  callProcessGroups = this->checkGroups();
+  //} catch (std::exception &ex) {
+  //  getLogger().error() << "Error in execution of algorithm " << this->name() << "\n" << ex.what() << "\n";
+  //  notificationCenter().postNotification(new ErrorNotification(this, ex.what()));
+  //  setResultState(ResultState::Failed);
+  //  if (m_isChildAlgorithm || m_runningAsync || m_rethrow) {
+  //    m_runningAsync = false;
+  //    throw;
+  //  }
+  //  return false;
+  //}
+
   timingInit += timer.elapsed(resetTimer);
+
+  bool callProcessGroups = m_strategy.size() > 1;
+
   // ----- Perform validation of the whole set of properties -------------
   if ((!callProcessGroups)) // for groups this is called on each workspace separately
   {
@@ -1148,6 +1166,11 @@ void Algorithm::logAlgorithmInfo() const {
 //===================================
 //=============================================================================================
 
+std::shared_ptr<IWorkspacePropertiesStrategist> Algorithm::createWorkspaceStrategist() const {
+  const WorkspaceInAndOutProperties insAndOuts = {m_inputWorkspaceProps, m_pureOutputWorkspaceProps};
+  return std::make_shared<WorkspacePropertiesStrategist>(insAndOuts);
+}
+
 /** Check the input workspace properties for groups.
  *
  * If there are more than one input workspace properties, then:
@@ -1383,153 +1406,198 @@ void Algorithm::fillHistory(const std::vector<Workspace_sptr> &outputWorkspaces)
 bool Algorithm::processGroups() {
   m_usingBaseProcessGroups = true;
 
-  std::vector<WorkspaceGroup_sptr> outGroups;
+  double progress_proportion = 1.0 / static_cast<double>(m_strategy.size());
+  for (size_t i = 0; i < m_strategy.size(); i++) {
+    auto alg = this->createChildAlgorithm(this->name(), progress_proportion * static_cast<double>(i),
+                                          progress_proportion * (1 + static_cast<double>(i)), this->isLogging(),
+                                          this->version());
+    alg->setChild(true);
+    alg->setAlwaysStoreInADS(true);
+    alg->enableHistoryRecordingForChild(false);
+    alg->setRethrows(true);
 
-  // ---------- Create all the output workspaces ----------------------------
-  for (auto &pureOutputWorkspaceProp : m_pureOutputWorkspaceProps) {
-    auto *prop = dynamic_cast<Property *>(pureOutputWorkspaceProp);
-    if (prop && !prop->value().empty()) {
-      auto outWSGrp = std::make_shared<WorkspaceGroup>();
-      outGroups.emplace_back(outWSGrp);
-      // Put the GROUP in the ADS
-      AnalysisDataService::Instance().addOrReplace(prop->value(), outWSGrp);
-      outWSGrp->observeADSNotifications(false);
-    }
-  }
+    this->copyNonWorkspaceProperties(alg.get(), int(i) + 1);
 
-  double progress_proportion = 1.0 / static_cast<double>(m_groupSize);
-  // Go through each entry in the input group(s)
-  for (size_t entry = 0; entry < m_groupSize; entry++) {
-    // use create Child Algorithm that look like this one
-    Algorithm_sptr alg_sptr = this->createChildAlgorithm(this->name(), progress_proportion * static_cast<double>(entry),
-                                                         progress_proportion * (1 + static_cast<double>(entry)),
-                                                         this->isLogging(), this->version());
-    // Make a child algorithm and turn off history recording for it, but always
-    // store result in the ADS
-    alg_sptr->setChild(true);
-    alg_sptr->setAlwaysStoreInADS(true);
-    alg_sptr->enableHistoryRecordingForChild(false);
-    alg_sptr->setRethrows(true);
-
-    Algorithm *alg = alg_sptr.get();
-    // Set all non-workspace properties
-    this->copyNonWorkspaceProperties(alg, int(entry) + 1);
-
-    std::string outputBaseName;
-
-    // ---------- Set all the input workspaces ----------------------------
-    for (size_t iwp = 0; iwp < m_unrolledInputWorkspaces.size(); iwp++) {
-      const std::vector<Workspace_sptr> &thisGroup = m_unrolledInputWorkspaces[iwp];
-      if (!thisGroup.empty()) {
-        // By default (for a single group) point to the first/only workspace
-        Workspace_sptr ws = thisGroup[0];
-
-        if ((m_singleGroup == int(iwp)) || m_singleGroup < 0) {
-          // Either: this is the single group
-          // OR: all inputs are groups
-          // ... so get then entry^th workspace in this group
-          if (entry < thisGroup.size()) {
-            ws = thisGroup[entry];
-          } else {
-            // This can happen when one has more than one input group
-            // workspaces, having different sizes. For example one workspace
-            // group is the corrections which has N parts (e.g. weights for
-            // polarized measurement) while the other one is the actual input
-            // workspace group, where each item needs to be corrected together
-            // with all N inputs of the second group. In this case processGroup
-            // needs to be overridden, which is currently not possible in
-            // python.
-            throw std::runtime_error("Unable to process over groups; consider passing workspaces "
-                                     "one-by-one or override processGroup method of the algorithm.");
-          }
-        }
-        // Append the names together
-        if (!outputBaseName.empty())
-          outputBaseName += "_";
-        outputBaseName += ws->getName();
-
-        // Set the property using the name of that workspace
-        if (auto *prop = dynamic_cast<Property *>(m_inputWorkspaceProps[iwp])) {
-          if (ws->getName().empty()) {
-            alg->setProperty(prop->name(), ws);
-          } else {
-            alg->setPropertyValue(prop->name(), ws->getName());
-          }
-        } else {
-          throw std::logic_error("Found a Workspace property which doesn't "
-                                 "inherit from Property.");
-        }
-      } // not an empty (i.e. optional) input
-    } // for each InputWorkspace property
-
-    std::vector<std::string> outputWSNames(m_pureOutputWorkspaceProps.size());
-    // ---------- Set all the output workspaces ----------------------------
-    for (size_t owp = 0; owp < m_pureOutputWorkspaceProps.size(); owp++) {
-      if (auto *prop = dynamic_cast<Property *>(m_pureOutputWorkspaceProps[owp])) {
-        // Default name = "in1_in2_out"
-        const std::string inName = prop->value();
-        if (inName.empty())
-          continue;
-        std::string outName;
-        if (m_groupsHaveSimilarNames) {
-          outName.append(inName).append("_").append(Strings::toString(entry + 1));
-        } else {
-          outName.append(outputBaseName).append("_").append(inName);
-        }
-
-        auto inputProp =
-            std::find_if(m_inputWorkspaceProps.begin(), m_inputWorkspaceProps.end(), WorkspacePropertyValueIs(inName));
-
-        // Overwrite workspaces in any input property if they have the same
-        // name as an output (i.e. copy name button in algorithm dialog used)
-        // (only need to do this for a single input, multiple will be handled
-        // by ADS)
-        if (inputProp != m_inputWorkspaceProps.end()) {
-          const auto &inputGroup = m_unrolledInputWorkspaces[inputProp - m_inputWorkspaceProps.begin()];
-          if (!inputGroup.empty())
-            outName = inputGroup[entry]->getName();
-        }
-        // Except if all inputs had similar names, then the name is "out_1"
-
-        // Set in the output
-        alg->setPropertyValue(prop->name(), outName);
-
-        outputWSNames[owp] = outName;
+    // TODO could there be methods on the strategist to do this?
+    //  or to output the properties in json or a formatted string to make use of
+    //  setProperties..()
+    for (const auto inputWorkspaceProp : m_strategy[i].workspacesIn) {
+      const auto prop = dynamic_cast<Property *>(inputWorkspaceProp);
+      const auto ws = inputWorkspaceProp->getWorkspace();
+      if (ws->getName().empty()) {
+        alg->setProperty(prop->name(), ws);
       } else {
-        throw std::logic_error("Found a Workspace property which doesn't "
-                               "inherit from Property.");
+        alg->setPropertyValue(prop->name(), ws->getName());
       }
-    } // for each OutputWorkspace property
+    }
 
-    // ------------ Execute the algo --------------
+    for (const auto outputWorkspaceProp : m_strategy[i].workspacesOut) {
+      const auto prop = dynamic_cast<Property *>(outputWorkspaceProp);
+      alg->setPropertyValue(prop->name(), prop->value());
+    }
+
     try {
       alg->execute();
     } catch (std::exception &e) {
       std::ostringstream msg;
-      msg << "Execution of " << this->name() << " for group entry " << (entry + 1) << " failed: ";
+      msg << "Execution of " << this->name() << " for group entry " << (i + 1) << " failed: ";
       msg << e.what(); // Add original message
       throw std::runtime_error(msg.str());
     }
-
-    // ------------ Fill in the output workspace group ------------------
-    // this has to be done after execute() because a workspace must exist
-    // when it is added to a group
-    for (size_t owp = 0; owp < m_pureOutputWorkspaceProps.size(); owp++) {
-      auto *prop = dynamic_cast<Property *>(m_pureOutputWorkspaceProps[owp]);
-      if (prop && prop->value().empty())
-        continue;
-      // And add it to the output group
-      outGroups[owp]->add(outputWSNames[owp]);
-    }
-
-  } // for each entry in each group
-
-  // restore group notifications
-  for (auto &outGroup : outGroups) {
-    outGroup->observeADSNotifications(true);
   }
 
+  m_strategist->setupGroupOutputs();
   return true;
+
+  // std::vector<WorkspaceGroup_sptr> outGroups;
+
+  //// ---------- Create all the output workspaces ----------------------------
+  // for (auto &pureOutputWorkspaceProp : m_pureOutputWorkspaceProps) {
+  //   auto *prop = dynamic_cast<Property *>(pureOutputWorkspaceProp);
+  //   if (prop && !prop->value().empty()) {
+  //     auto outWSGrp = std::make_shared<WorkspaceGroup>();
+  //     outGroups.emplace_back(outWSGrp);
+  //     // Put the GROUP in the ADS
+  //     AnalysisDataService::Instance().addOrReplace(prop->value(), outWSGrp);
+  //     outWSGrp->observeADSNotifications(false);
+  //   }
+  // }
+
+  // double progress_proportion = 1.0 / static_cast<double>(m_groupSize);
+  //// Go through each entry in the input group(s)
+  // for (size_t entry = 0; entry < m_groupSize; entry++) {
+  //   // use create Child Algorithm that look like this one
+  //   Algorithm_sptr alg_sptr = this->createChildAlgorithm(this->name(), progress_proportion *
+  //   static_cast<double>(entry),
+  //                                                        progress_proportion * (1 + static_cast<double>(entry)),
+  //                                                        this->isLogging(), this->version());
+  //   // Make a child algorithm and turn off history recording for it, but always
+  //   // store result in the ADS
+  //   alg_sptr->setChild(true);
+  //   alg_sptr->setAlwaysStoreInADS(true);
+  //   alg_sptr->enableHistoryRecordingForChild(false);
+  //   alg_sptr->setRethrows(true);
+
+  //  Algorithm *alg = alg_sptr.get();
+  //  // Set all non-workspace properties
+  //  this->copyNonWorkspaceProperties(alg, int(entry) + 1);
+
+  //  std::string outputBaseName;
+
+  //  // ---------- Set all the input workspaces ----------------------------
+  //  for (size_t iwp = 0; iwp < m_unrolledInputWorkspaces.size(); iwp++) {
+  //    const std::vector<Workspace_sptr> &thisGroup = m_unrolledInputWorkspaces[iwp];
+  //    if (!thisGroup.empty()) {
+  //      // By default (for a single group) point to the first/only workspace
+  //      Workspace_sptr ws = thisGroup[0];
+
+  //      if ((m_singleGroup == int(iwp)) || m_singleGroup < 0) {
+  //        // Either: this is the single group
+  //        // OR: all inputs are groups
+  //        // ... so get then entry^th workspace in this group
+  //        if (entry < thisGroup.size()) {
+  //          ws = thisGroup[entry];
+  //        } else {
+  //          // This can happen when one has more than one input group
+  //          // workspaces, having different sizes. For example one workspace
+  //          // group is the corrections which has N parts (e.g. weights for
+  //          // polarized measurement) while the other one is the actual input
+  //          // workspace group, where each item needs to be corrected together
+  //          // with all N inputs of the second group. In this case processGroup
+  //          // needs to be overridden, which is currently not possible in
+  //          // python.
+  //          throw std::runtime_error("Unable to process over groups; consider passing workspaces "
+  //                                   "one-by-one or override processGroup method of the algorithm.");
+  //        }
+  //      }
+  //      // Append the names together
+  //      if (!outputBaseName.empty())
+  //        outputBaseName += "_";
+  //      outputBaseName += ws->getName();
+
+  //      // Set the property using the name of that workspace
+  //      if (auto *prop = dynamic_cast<Property *>(m_inputWorkspaceProps[iwp])) {
+  //        if (ws->getName().empty()) {
+  //          alg->setProperty(prop->name(), ws);
+  //        } else {
+  //          alg->setPropertyValue(prop->name(), ws->getName());
+  //        }
+  //      } else {
+  //        throw std::logic_error("Found a Workspace property which doesn't "
+  //                               "inherit from Property.");
+  //      }
+  //    } // not an empty (i.e. optional) input
+  //  } // for each InputWorkspace property
+
+  //  std::vector<std::string> outputWSNames(m_pureOutputWorkspaceProps.size());
+  //  // ---------- Set all the output workspaces ----------------------------
+  //  for (size_t owp = 0; owp < m_pureOutputWorkspaceProps.size(); owp++) {
+  //    if (auto *prop = dynamic_cast<Property *>(m_pureOutputWorkspaceProps[owp])) {
+  //      // Default name = "in1_in2_out"
+  //      const std::string inName = prop->value();
+  //      if (inName.empty())
+  //        continue;
+  //      std::string outName;
+  //      if (m_groupsHaveSimilarNames) {
+  //        outName.append(inName).append("_").append(Strings::toString(entry + 1));
+  //      } else {
+  //        outName.append(outputBaseName).append("_").append(inName);
+  //      }
+
+  //      auto inputProp =
+  //          std::find_if(m_inputWorkspaceProps.begin(), m_inputWorkspaceProps.end(),
+  //          WorkspacePropertyValueIs(inName));
+
+  //      // Overwrite workspaces in any input property if they have the same
+  //      // name as an output (i.e. copy name button in algorithm dialog used)
+  //      // (only need to do this for a single input, multiple will be handled
+  //      // by ADS)
+  //      if (inputProp != m_inputWorkspaceProps.end()) {
+  //        const auto &inputGroup = m_unrolledInputWorkspaces[inputProp - m_inputWorkspaceProps.begin()];
+  //        if (!inputGroup.empty())
+  //          outName = inputGroup[entry]->getName();
+  //      }
+  //      // Except if all inputs had similar names, then the name is "out_1"
+
+  //      // Set in the output
+  //      alg->setPropertyValue(prop->name(), outName);
+
+  //      outputWSNames[owp] = outName;
+  //    } else {
+  //      throw std::logic_error("Found a Workspace property which doesn't "
+  //                             "inherit from Property.");
+  //    }
+  //  } // for each OutputWorkspace property
+
+  //  // ------------ Execute the algo --------------
+  //  try {
+  //    alg->execute();
+  //  } catch (std::exception &e) {
+  //    std::ostringstream msg;
+  //    msg << "Execution of " << this->name() << " for group entry " << (entry + 1) << " failed: ";
+  //    msg << e.what(); // Add original message
+  //    throw std::runtime_error(msg.str());
+  //  }
+
+  //  // ------------ Fill in the output workspace group ------------------
+  //  // this has to be done after execute() because a workspace must exist
+  //  // when it is added to a group
+  //  for (size_t owp = 0; owp < m_pureOutputWorkspaceProps.size(); owp++) {
+  //    auto *prop = dynamic_cast<Property *>(m_pureOutputWorkspaceProps[owp]);
+  //    if (prop && prop->value().empty())
+  //      continue;
+  //    // And add it to the output group
+  //    outGroups[owp]->add(outputWSNames[owp]);
+  //  }
+
+  //} // for each entry in each group
+
+  //// restore group notifications
+  // for (auto &outGroup : outGroups) {
+  //   outGroup->observeADSNotifications(true);
+  // }
+
+  // return true;
 }
 
 //--------------------------------------------------------------------------------------------

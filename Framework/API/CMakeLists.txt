@@ -277,6 +277,7 @@ set(INC_FILES
     inc/MantidAPI/ITableWorkspace.h
     inc/MantidAPI/ITableWorkspace_fwd.h
     inc/MantidAPI/ITransformScale.h
+    inc/MantidAPI/IWorkspacePropertiesStrategist.h
     inc/MantidAPI/IWorkspaceProperty.h
     inc/MantidAPI/ImmutableCompositeFunction.h
     inc/MantidAPI/ImplicitFunctionBuilder.h

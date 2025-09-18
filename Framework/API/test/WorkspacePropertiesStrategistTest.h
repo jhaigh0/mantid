@@ -66,7 +66,7 @@ public:
   }
 
   void test_noGroupWorkspacesOneInput() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputProp1}, {m_matrixOutputProp1}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputProp1.get()}, {m_matrixOutputProp1.get()}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -75,7 +75,8 @@ public:
   }
 
   void test_noGroupWorkspacesTwoInputs() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputProp1, m_matrixInputProp2}, {m_matrixOutputProp1}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputProp1.get(), m_matrixInputProp2.get()},
+                                                    {m_matrixOutputProp1.get()}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -84,7 +85,7 @@ public:
   }
 
   void test_oneGroupInput() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar}, {}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar.get()}, {}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -95,7 +96,7 @@ public:
 
   void test_twoGroupInputs() {
     const WorkspaceInAndOutProperties insAndOuts = {
-        {m_matrixInputSetWithGroupSimilar, m_matrixInputSetWithGroupUnsimilar}, {}};
+        {m_matrixInputSetWithGroupSimilar.get(), m_matrixInputSetWithGroupUnsimilar.get()}, {}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -105,7 +106,8 @@ public:
   }
 
   void test_oneGroupInputAndOneSingleWorkspace() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupUnsimilar, m_matrixInputProp1}, {}};
+    const WorkspaceInAndOutProperties insAndOuts = {
+        {m_matrixInputSetWithGroupUnsimilar.get(), m_matrixInputProp1.get()}, {}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -116,7 +118,7 @@ public:
 
   void test_groupWorkspacePropertyIsNotSplitUp() {
     // also tests that an empty group in a group property, does not throw an error
-    const WorkspaceInAndOutProperties insAndOuts = {{m_groupInput}, {}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_groupInput.get()}, {}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -125,7 +127,8 @@ public:
   }
 
   void test_groupInputLeadsToGroupOutputWithSimilarNames() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar}, {m_matrixOutputProp1}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar.get()},
+                                                    {m_matrixOutputProp1.get()}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -141,7 +144,8 @@ public:
   }
 
   void test_groupInputLeadsToGroupOutputWithUnsimilarNames() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupUnsimilar}, {m_matrixOutputProp1}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupUnsimilar.get()},
+                                                    {m_matrixOutputProp1.get()}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -158,7 +162,8 @@ public:
 
   void test_twoGroupInputsCombineOutputNamesWhenUnsimilar() {
     const WorkspaceInAndOutProperties insAndOuts = {
-        {m_matrixInputSetWithGroupSimilar, m_matrixInputSetWithGroupUnsimilar}, {m_matrixOutputProp1}};
+        {m_matrixInputSetWithGroupSimilar.get(), m_matrixInputSetWithGroupUnsimilar.get()},
+        {m_matrixOutputProp1.get()}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -176,8 +181,8 @@ public:
   }
 
   void test_groupInputWithTwoOutputs() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar},
-                                                    {m_matrixOutputProp1, m_matrixOutputProp2}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar.get()},
+                                                    {m_matrixOutputProp1.get(), m_matrixOutputProp2.get()}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -193,8 +198,8 @@ public:
   }
 
   void test_outputOverwritingInputGroup() {
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar},
-                                                    {m_matrixInputSetWithGroupSimilar}};
+    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar.get()},
+                                                    {m_matrixInputSetWithGroupSimilar.get()}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     const auto propertySets = strategist.createInputOutputStrategy();
@@ -213,8 +218,8 @@ public:
     const auto matrixInputSetWithSingleGroup = std::make_shared<WorkspaceProperty<MatrixWorkspace>>(
         "InputWorkspace2", "wsGroupWithOneEntry", Direction::Input);
 
-    const WorkspaceInAndOutProperties insAndOuts = {{m_matrixInputSetWithGroupSimilar, matrixInputSetWithSingleGroup},
-                                                    {}};
+    const WorkspaceInAndOutProperties insAndOuts = {
+        {m_matrixInputSetWithGroupSimilar.get(), matrixInputSetWithSingleGroup.get()}, {}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     TS_ASSERT_THROWS_EQUALS(strategist.createInputOutputStrategy(), const std::invalid_argument &e,
@@ -227,7 +232,7 @@ public:
     const auto matrixInputSetWithEmptyGroup =
         std::make_shared<WorkspaceProperty<MatrixWorkspace>>("InputWorkspace", "wsGroupNoEntries", Direction::Input);
 
-    const WorkspaceInAndOutProperties insAndOuts = {{matrixInputSetWithEmptyGroup}, {}};
+    const WorkspaceInAndOutProperties insAndOuts = {{matrixInputSetWithEmptyGroup.get()}, {}};
 
     WorkspacePropertiesStrategist strategist(insAndOuts);
     TS_ASSERT_THROWS_EQUALS(strategist.createInputOutputStrategy(), const std::invalid_argument &e,
@@ -260,7 +265,7 @@ private:
       TS_ASSERT_EQUALS(outputProperties.size(), outputWorkspaceNames.size());
       for (size_t j = 0; j < outputProperties.size(); j++) {
         const auto outputProperty = outputProperties[j];
-        const auto prop = std::dynamic_pointer_cast<Property>(outputProperty);
+        const auto prop = dynamic_cast<Property *>(outputProperty);
         TS_ASSERT_EQUALS(prop->value(), outputWorkspaceNames[j]);
       }
     }

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "MantidAPI/DllConfig.h"
+#include "MantidAPI/IWorkspacePropertiesStrategist.h"
 #include "MantidAPI/WorkspaceProperty.h"
 
 #include <optional>
@@ -14,29 +15,22 @@
 namespace Mantid {
 namespace API {
 
-using WorkspaceProperties = std::vector<std::shared_ptr<IWorkspaceProperty>>;
 using WorkspaceVector = std::vector<std::shared_ptr<Workspace>>;
 
-struct WorkspaceInAndOutProperties {
-  WorkspaceProperties workspacesIn;
-  WorkspaceProperties workspacesOut;
-
-  bool operator==(const WorkspaceInAndOutProperties &) const = default;
-};
-
 struct InputPropertyInfo {
-  std::shared_ptr<IWorkspaceProperty> inputProperty;
+  IWorkspaceProperty *inputProperty;
   WorkspaceVector unrolledWorkspaces;
   bool groupWorkspaceInSingleWorkspaceProperty;
 };
 
 /** WorkspacePropertiesStrategist : TODO: DESCRIPTION
  */
-class MANTID_API_DLL WorkspacePropertiesStrategist {
+class MANTID_API_DLL WorkspacePropertiesStrategist : public IWorkspacePropertiesStrategist {
 public:
   WorkspacePropertiesStrategist(const WorkspaceInAndOutProperties properties) : m_inAndOutProperties(properties) {};
-  std::vector<WorkspaceInAndOutProperties> createInputOutputStrategy();
-  void setupGroupOutputs();
+
+  std::vector<WorkspaceInAndOutProperties> createInputOutputStrategy() override;
+  void setupGroupOutputs() override;
 
 private:
   std::optional<std::string> checkGroupSizes();

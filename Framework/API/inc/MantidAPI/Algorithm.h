@@ -11,6 +11,7 @@
 
 #include "MantidAPI/DllConfig.h"
 #include "MantidAPI/IAlgorithm.h"
+#include "MantidAPI/IWorkspacePropertiesStrategist.h"
 #include "MantidAPI/IndexTypeProperty.h"
 #include "MantidKernel/DateAndTime.h"
 #include "MantidKernel/IValidator.h"
@@ -403,6 +404,8 @@ protected:
   /// Copy workspace history from input workspaces to provided vector of output workspaces
   void fillHistory(const std::vector<Workspace_sptr> &outputWorkspaces);
 
+  std::shared_ptr<IWorkspacePropertiesStrategist> createWorkspaceStrategist() const;
+
   /// Set to true to stop execution
   std::atomic<bool> m_cancel;
   /// Set if an exception is thrown, and not caught, within a parallel region
@@ -520,6 +523,9 @@ private:
   /// Store a pointer to the input workspace histories so they can be copied to
   /// the outputs to avoid anything being overwritten
   std::vector<Workspace_sptr> m_inputWorkspaceHistories;
+
+  std::shared_ptr<IWorkspacePropertiesStrategist> m_strategist;
+  std::vector<WorkspaceInAndOutProperties> m_strategy;
 
   /// Reserved property names
   std::vector<std::string> m_reservedList;
