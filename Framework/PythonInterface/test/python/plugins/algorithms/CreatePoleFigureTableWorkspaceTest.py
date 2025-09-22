@@ -85,7 +85,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
         alg.setProperty("PeakParameterWorkspace", peak_param_table)
         alg.setProperty("OutputWorkspace", "outws")
         alg.setProperty("ReadoutColumn", readout)
-        issues = alg.validateInputs()
+        issues = alg.validate()
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues["PeakParameterWorkspace"], f"PeakParameterWorkspace must have column: '{column_name}'")
 
@@ -366,7 +366,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
             OutputWorkspace="outws",
             Chi2Threshold=0.0,
         )
-        issues = alg.validateInputs()
+        issues = alg.validate()
         self.assertEqual(len(issues), 0)
 
     def test_x0_not_required_if_threshold_is_set_to_zero(self):
@@ -379,7 +379,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
             OutputWorkspace="outws",
             PeakPositionThreshold=0.0,
         )
-        issues = alg.validateInputs()
+        issues = alg.validate()
         self.assertEqual(len(issues), 0)
 
     def test_suitable_hkl_can_be_parsed(self):
@@ -391,7 +391,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
                 OutputWorkspace="outws",
                 Reflection=hkl,
             )
-            issues = alg.validateInputs()
+            issues = alg.validate()
             self.assertEqual(len(issues), 0)
 
     def _setup_offset_rod(self, offset):
@@ -473,7 +473,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
             PeakParameterWorkspace=AnalysisDataService.retrieve("BadPeakParameterWS"),
             OutputWorkspace="outws",
         )
-        issues = alg.validateInputs()
+        issues = alg.validate()
         self.assertEqual(len(issues), 1)
         self.assertEqual(
             issues["PeakParameterWorkspace"], "PeakParameterWorkspace must have same number of rows as Input Workspace has spectra"
@@ -497,7 +497,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
             OutputWorkspace="outws",
             Reflection=(1, 1, 1),
         )
-        issues = alg.validateInputs()
+        issues = alg.validate()
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues["InputWorkspace"], "If reflection is specified: InputWorkspace must have a sample")
 
@@ -519,7 +519,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
             OutputWorkspace="outws",
             Reflection=(1, 1, 1),
         )
-        issues = alg.validateInputs()
+        issues = alg.validate()
         self.assertEqual(len(issues), 1)
         self.assertEqual(issues["InputWorkspace"], "If reflection is specified: InputWorkspace sample must have a CrystalStructure")
 
@@ -530,7 +530,7 @@ class CreatePoleFigureTableTest(unittest.TestCase):
             OutputWorkspace="outws",
             AxesTransform=np.ones(9),
         )
-        issues = alg.validateInputs()
+        issues = alg.validate()
         self.assertEqual(len(issues), 1)
         self.assertEqual(
             issues["AxesTransform"],

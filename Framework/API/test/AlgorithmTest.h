@@ -98,7 +98,7 @@ class AlgorithmWithValidateInputs : public Algorithm {
 public:
   AlgorithmWithValidateInputs() : Algorithm() {}
   ~AlgorithmWithValidateInputs() override = default;
-  const std::string name() const override { return "StubbedWorkspaceAlgorithm2"; }
+  const std::string name() const override { return "AlgorithmWithValidateInputs"; }
   int version() const override { return 1; }
   const std::string category() const override { return "Cat;Leopard;Mink"; }
   const std::string summary() const override { return "Test summary"; }
@@ -121,6 +121,37 @@ public:
   }
 };
 DECLARE_ALGORITHM(AlgorithmWithValidateInputs)
+
+class AlgorithmWithValidateInputs2 : public Algorithm {
+public:
+  AlgorithmWithValidateInputs2() : Algorithm() {}
+  ~AlgorithmWithValidateInputs2() override = default;
+  const std::string name() const override { return "AlgorithmWithValidateInputs2"; }
+  int version() const override { return 1; }
+  const std::string category() const override { return "Cat;Leopard;Mink"; }
+  const std::string summary() const override { return "Test summary"; }
+  const std::string workspaceMethodName() const override { return "methodname"; }
+
+  void init() override {
+    declareProperty(std::make_unique<WorkspaceProperty<MatrixWorkspace>>("InputWorkspace1", "", Direction::Input));
+    declareProperty(std::make_unique<WorkspaceProperty<MatrixWorkspace>>("InputWorkspace2", "", Direction::Input));
+  }
+  void exec() override {}
+  std::map<std::string, std::string> validateInputs() override {
+    std::map<std::string, std::string> out;
+    const MatrixWorkspace_sptr input1 = getProperty("InputWorkspace1");
+    const MatrixWorkspace_sptr input2 = getProperty("InputWorkspace2");
+    const std::string &name1 = input1->getName();
+    const std::string &name2 = input2->getName();
+    if (name1.starts_with(name2[0])) {
+      // Workspaces start with the same letter
+      out["InputWorkspace2"] =
+          "InputWorkspace2 (" + name2 + ") must not start with the same letter as InputWorkspace1 (" + name1 + ")";
+    }
+    return out;
+  }
+};
+DECLARE_ALGORITHM(AlgorithmWithValidateInputs2)
 
 /**
  * Algorithm which fails on specified workspace
@@ -586,8 +617,8 @@ public:
     workspaceAlg->execute();
 
     // The input workspace should have references from the algorithm
-    // and the local variable
-    TS_ASSERT_EQUALS(2, inputWorkspace.use_count());
+    // (and its workspace strategist class) and the local variable
+    TS_ASSERT_EQUALS(3, inputWorkspace.use_count());
 
     // dropping algorithm should leave the local variable
     workspaceAlg.reset();
@@ -815,6 +846,25 @@ public:
     TS_ASSERT_EQUALS(ws3->getTitle(), "A3+D3+D3");
   }
 
+  void test_validate_runsValidateInputsOnEachWorkspaceInAGroup() {
+    const auto result = doTestValidateWithGroups("A", "A1,A2,A3", "Another", "B1,B2,B3");
+    TS_ASSERT(result.empty());
+  }
+
+  void test_validate_failsWhenValidateInputsFailsForOnePairOfWorkspaceInputs() {
+    const auto result = doTestValidateWithGroups("A", "A1,A2,A3", "B", "B1,A20,B3");
+    TS_ASSERT_EQUALS(result.at("InputWorkspace2"),
+                     "InputWorkspace2 (A20) must not start with the same letter as InputWorkspace1 (A2)");
+  }
+
+  void test_validate_failsWhenGroupsAreDiffernetSizes() {
+    const auto result = doTestValidateWithGroups("A", "A1,A2,A3", "B", "B1,B2");
+    const std::string resultInput1 = result.at("InputWorkspace1");
+    const std::string resultInput2 = result.at("InputWorkspace2");
+    TS_ASSERT(resultInput1.find("Input WorkspaceGroups are not of the same size.") != std::string::npos);
+    TS_ASSERT(resultInput2.find("Input WorkspaceGroups are not of the same size.") != std::string::npos);
+  }
+
   void doHistoryCopyTest(const std::string &inputWSName, const std::string &outputWSName) {
     auto inputWS = std::make_shared<WorkspaceTester>();
     inputWS->history().addHistory(
@@ -994,6 +1044,19 @@ private:
     if (!testAlg)
       TS_FAIL("Failed to create algorithm, cannot continue test.");
     return testAlg;
+  }
+
+  std::map<std::string, std::string> doTestValidateWithGroups(const std::string &name1, std::string contents1,
+                                                              const std::string &name2, std::string contents2) {
+    makeWorkspaceGroup(name1, contents1);
+    makeWorkspaceGroup(name2, contents2);
+
+    AlgorithmWithValidateInputs2 alg;
+    alg.initialize();
+    alg.setPropertyValue("InputWorkspace1", name1);
+    alg.setPropertyValue("InputWorkspace2", name2);
+
+    return alg.validate();
   }
 
   ToyAlgorithm alg;

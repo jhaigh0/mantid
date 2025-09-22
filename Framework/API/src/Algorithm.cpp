@@ -324,13 +324,72 @@ void Algorithm::initialize() {
 //---------------------------------------------------------------------------------------------
 /** Perform validation of ALL the input properties of the algorithm.
  * This is to be overridden by specific algorithms.
- * It will be called in dialogs after parsing all inputs and setting the
- * properties, but BEFORE executing.
  *
  * @return a map where: Key = string name of the property;
             Value = string describing the problem with the property.
  */
 std::map<std::string, std::string> Algorithm::validateInputs() { return std::map<std::string, std::string>(); }
+
+//---------------------------------------------------------------------------------------------
+/** Wraps validateInputs() to handle group workspaces in the case that validation is run
+ * in dialogs after parsing all inputs and setting the *properties but BEFORE executing.
+ *
+ * @return a map where: Key = string name of the property;
+           Value = string describing the problem with the property.
+ */
+std::map<std::string, std::string> Algorithm::validate() {
+  this->cacheWorkspaceProperties();
+  m_strategist = createWorkspaceStrategist();
+  try {
+    m_strategy = m_strategist->createInputOutputStrategy();
+  } catch (std::exception &ex) {
+    getLogger().error() << "Error found when checking group inputs"
+                        << "\n"
+                        << ex.what() << "\n";
+    // TODO, a smarter way to do this?
+    std::map<std::string, std::string> inputErrors;
+    for (IWorkspaceProperty *iProp : m_inputWorkspaceProps) {
+      auto *prop = dynamic_cast<Property *>(iProp);
+      inputErrors[prop->name()] = ex.what();
+    }
+    return inputErrors;
+  }
+
+  if (m_strategy.size() <= 1) {
+    return this->validateInputs();
+  }
+
+  for (size_t i = 0; i < m_strategy.size(); i++) {
+    auto alg = this->createChildAlgorithm(this->name(), -1.0, -1.0, this->isLogging(), this->version());
+
+    this->copyNonWorkspaceProperties(alg.get(), int(i) + 1);
+
+    // TODO could there be methods on the strategist to do this?
+    //  or to output the properties in json or a formatted string to make use of
+    //  setProperties..()
+    for (const auto inputWorkspaceProp : m_strategy[i].workspacesIn) {
+      const auto prop = dynamic_cast<Property *>(inputWorkspaceProp);
+      const auto ws = inputWorkspaceProp->getWorkspace();
+      if (ws->getName().empty()) {
+        alg->setProperty(prop->name(), ws);
+      } else {
+        alg->setPropertyValue(prop->name(), ws->getName());
+      }
+    }
+
+    for (const auto outputWorkspaceProp : m_strategy[i].workspacesOut) {
+      const auto prop = dynamic_cast<Property *>(outputWorkspaceProp);
+      alg->setPropertyValue(prop->name(), prop->value());
+    }
+
+    const auto results = alg->validateInputs();
+    if (!results.empty()) {
+      return results;
+    }
+  }
+
+  return std::map<std::string, std::string>();
+}
 
 //---------------------------------------------------------------------------------------------
 /**
@@ -613,7 +672,8 @@ bool Algorithm::executeInternal() {
 
   timingInit += timer.elapsed(resetTimer);
 
-  bool callProcessGroups = m_strategy.size() > 1;
+  bool callProcessGroups =
+      m_strategy != std::vector{WorkspaceInAndOutProperties({m_inputWorkspaceProps, m_pureOutputWorkspaceProps})};
 
   // ----- Perform validation of the whole set of properties -------------
   if ((!callProcessGroups)) // for groups this is called on each workspace separately
@@ -855,6 +915,9 @@ void Algorithm::store() {
       }
     }
   }
+
+  // clear refferences to the workspaces from the strategist
+  m_strategist.reset();
 }
 
 //---------------------------------------------------------------------------------------------
@@ -1424,7 +1487,9 @@ bool Algorithm::processGroups() {
     for (const auto inputWorkspaceProp : m_strategy[i].workspacesIn) {
       const auto prop = dynamic_cast<Property *>(inputWorkspaceProp);
       const auto ws = inputWorkspaceProp->getWorkspace();
-      if (ws->getName().empty()) {
+      if (!ws) {
+        alg->setProperty(prop->name(), "");
+      } else if (ws->getName().empty()) {
         alg->setProperty(prop->name(), ws);
       } else {
         alg->setPropertyValue(prop->name(), ws->getName());

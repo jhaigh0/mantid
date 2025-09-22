@@ -33,7 +33,10 @@ void WorkspacePropertiesStrategist::setupGroupOutputs() {
   // Going to be called after the algorithm(s) have been processed
   // So the child workspaces should now exist in the ADS
 
-  if (m_groupSizeFound == 1) {
+  bool unpackGroups = std::any_of(
+      m_inputWorkspaceProperties.cbegin(), m_inputWorkspaceProperties.cend(),
+      [](const auto &inputPropertyInfo) { return inputPropertyInfo.groupWorkspaceInSingleWorkspaceProperty; });
+  if (!unpackGroups) {
     return;
   }
 
@@ -66,7 +69,10 @@ void WorkspacePropertiesStrategist::setupGroupOutputs() {
  * @return vector of WorkspaceInAndOutProperties
  */
 std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createStrategy() {
-  if (m_groupSizeFound == 1) {
+  bool unpackGroups = std::any_of(
+      m_inputWorkspaceProperties.cbegin(), m_inputWorkspaceProperties.cend(),
+      [](const auto &inputPropertyInfo) { return inputPropertyInfo.groupWorkspaceInSingleWorkspaceProperty; });
+  if (!unpackGroups) {
     // no group workspaces in single workspace properties
     m_strategy.push_back(m_inAndOutProperties);
     return m_strategy;
@@ -81,7 +87,8 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
       Workspace_sptr ws;
       if (unrolledWorkspaces.empty()) {
         insAndOuts.workspacesIn.push_back(inputPropertyInfo.inputProperty);
-      } else if (unrolledWorkspaces.size() == 1) {
+        continue;
+      } else if (!inputPropertyInfo.groupWorkspaceInSingleWorkspaceProperty) {
         ws = unrolledWorkspaces[0];
         insAndOuts.workspacesIn.push_back(inputPropertyInfo.inputProperty);
       } else {

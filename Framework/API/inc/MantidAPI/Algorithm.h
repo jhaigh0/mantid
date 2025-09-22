@@ -212,7 +212,7 @@ public:
   bool execute() override final;
   void addTimer(const std::string &name, const Kernel::time_point_ns &begin, const Kernel::time_point_ns &end);
   void executeAsChildAlg() override;
-  std::map<std::string, std::string> validateInputs() override;
+  std::map<std::string, std::string> validate() override;
 
   /// Gets the current execution state
   ExecutionState executionState() const override;
@@ -362,6 +362,8 @@ protected:
   virtual void init() = 0;
   /// Virtual method - must be overridden by concrete algorithm
   virtual void exec() = 0;
+  /// Method checking errors on ALL the inputs, before execution. Used internally by validate().
+  virtual std::map<std::string, std::string> validateInputs();
 
   /// Returns a semi-colon separated list of workspace types to attach this
   /// algorithm

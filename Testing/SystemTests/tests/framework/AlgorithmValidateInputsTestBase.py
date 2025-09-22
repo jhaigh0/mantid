@@ -14,8 +14,8 @@ INPUT_WS_NAME = "input_ws"
 
 class AlgorithmValidateInputsTestBase(MantidSystemTest, metaclass=ABCMeta):
     """
-    The base class for a system test which tests the Algorithm validateInputs method for a given workspace in the ADS.
-    The test will only validateInputs for the most recent version of an algorithm.
+    The base class for a system test which tests the Algorithm validate method for a given workspace in the ADS.
+    The test will only run validate for the most recent version of an algorithm.
     """
 
     def __init__(self):
@@ -51,8 +51,8 @@ class AlgorithmValidateInputsTestBase(MantidSystemTest, metaclass=ABCMeta):
             return
 
         try:
-            # This is the real test - does the validateInputs function run successfully
-            algorithm.validateInputs()
+            # This is the real test - does the validate function run successfully
+            algorithm.validate()
         except Exception as ex:
             # Makes sure that an exception gets printed if it fails, and then re-raises the exception
             print(ex)

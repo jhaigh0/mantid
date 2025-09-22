@@ -389,7 +389,7 @@ void SequentialFitDialog::accept() {
   bool passWSIndexToFunction = ui.ckbPassWS->isChecked();
   alg->setProperty("PassWSIndexToFunction", passWSIndexToFunction);
 
-  auto errors = alg->validateInputs();
+  auto errors = alg->validate();
 
   if (!errors.empty()) {
     for (const auto &[key, error] : errors) {
