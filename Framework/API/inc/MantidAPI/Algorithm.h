@@ -435,8 +435,6 @@ protected:
   /// One vector of workspaces for each input workspace property. A group is
   /// unrolled to its constituent members
   std::vector<WorkspaceVector> m_unrolledInputWorkspaces;
-  /// Size of the group(s) being processed
-  size_t m_groupSize;
   /// distinguish between base processGroups() and overriden/algorithm specific
   /// versions
   bool m_usingBaseProcessGroups = false;
