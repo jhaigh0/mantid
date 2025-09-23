@@ -23,7 +23,9 @@ struct InputPropertyInfo {
   bool groupWorkspaceInSingleWorkspaceProperty;
 };
 
-/** WorkspacePropertiesStrategist : TODO: DESCRIPTION
+/** WorkspacePropertiesStrategist : Class which takes the set input and output properties to
+ * an algorithm and produces a strategy (a list of sets of input / output properties) by which
+ * to execute over any workspace group inputs.
  */
 class MANTID_API_DLL WorkspacePropertiesStrategist : public IWorkspacePropertiesStrategist {
 public:
@@ -36,6 +38,7 @@ private:
   std::optional<std::string> checkGroupSizes();
   std::vector<InputPropertyInfo> collateInputWorkspaceInfo(const WorkspaceProperties &workspacesIn);
   std::vector<WorkspaceInAndOutProperties> createStrategy();
+  bool areGroupsToUnpack();
 
   WorkspaceInAndOutProperties m_inAndOutProperties;
   size_t m_groupSizeFound{0};

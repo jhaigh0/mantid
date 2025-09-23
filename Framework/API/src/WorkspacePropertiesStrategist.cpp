@@ -15,12 +15,32 @@ using namespace Mantid::Kernel;
 namespace Mantid {
 namespace API {
 
+class WorkspacePropertyValueIs {
+public:
+  explicit WorkspacePropertyValueIs(const std::string &value) : m_value(value) {}
+  bool operator()(InputPropertyInfo propertyInfo) {
+    auto *prop = dynamic_cast<Property *>(propertyInfo.inputProperty);
+    if (!prop)
+      return false;
+    return prop->value() == m_value;
+  }
+
+private:
+  const std::string &m_value;
+};
+
 std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createInputOutputStrategy() {
   m_inputWorkspaceProperties = collateInputWorkspaceInfo(m_inAndOutProperties.workspacesIn);
   if (const auto error = checkGroupSizes()) {
     throw std::invalid_argument(error.value());
   }
   return createStrategy();
+}
+
+bool WorkspacePropertiesStrategist::areGroupsToUnpack() {
+  return std::any_of(
+      m_inputWorkspaceProperties.cbegin(), m_inputWorkspaceProperties.cend(),
+      [](const auto &inputPropertyInfo) { return inputPropertyInfo.groupWorkspaceInSingleWorkspaceProperty; });
 }
 
 /**
@@ -30,13 +50,10 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createIn
  * created.
  */
 void WorkspacePropertiesStrategist::setupGroupOutputs() {
-  // Going to be called after the algorithm(s) have been processed
+  // To be called after the algorithm(s) have been processed
   // So the child workspaces should now exist in the ADS
 
-  bool unpackGroups = std::any_of(
-      m_inputWorkspaceProperties.cbegin(), m_inputWorkspaceProperties.cend(),
-      [](const auto &inputPropertyInfo) { return inputPropertyInfo.groupWorkspaceInSingleWorkspaceProperty; });
-  if (!unpackGroups) {
+  if (!areGroupsToUnpack()) {
     return;
   }
 
@@ -56,8 +73,10 @@ void WorkspacePropertiesStrategist::setupGroupOutputs() {
       const auto prop = dynamic_cast<Property *>(outProperty);
       if (prop && !prop->value().empty()) {
         const auto outGroup = outputWorkspaceGroups[prop->name()];
-        // TODO error handling if workspace doesn't exist.
-        outGroup->add(prop->value());
+        try {
+          outGroup->add(prop->value());
+        } catch (std::runtime_error) {
+        }
       }
     }
   }
@@ -69,10 +88,7 @@ void WorkspacePropertiesStrategist::setupGroupOutputs() {
  * @return vector of WorkspaceInAndOutProperties
  */
 std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createStrategy() {
-  bool unpackGroups = std::any_of(
-      m_inputWorkspaceProperties.cbegin(), m_inputWorkspaceProperties.cend(),
-      [](const auto &inputPropertyInfo) { return inputPropertyInfo.groupWorkspaceInSingleWorkspaceProperty; });
-  if (!unpackGroups) {
+  if (!areGroupsToUnpack()) {
     // no group workspaces in single workspace properties
     m_strategy.push_back(m_inAndOutProperties);
     return m_strategy;
@@ -94,7 +110,6 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
       } else {
         const auto prop = dynamic_cast<Property *>(inputPropertyInfo.inputProperty);
         ws = unrolledWorkspaces[i];
-        // Does this need to be specifically a matrix workspace, event workspace etc. property?
         const auto wsProp = new WorkspaceProperty<Workspace>(prop->name(), ws->getName(), Direction::Input);
         wsProp->setDataItem(ws);
         insAndOuts.workspacesIn.push_back(wsProp);
@@ -104,12 +119,11 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
       outputWsNameBase += ws->getName();
     }
 
+    // Outputs
     for (const auto workspaceOutputProperty : m_inAndOutProperties.workspacesOut) {
       const auto prop = dynamic_cast<Property *>(workspaceOutputProperty);
       const std::string providedName = prop->value();
       if (providedName.empty()) {
-        // TODO need to add an empty output prop???
-        // could maybe just loop over the entries already in the map??
         continue;
       }
       std::string childWorkspaceName;
@@ -119,16 +133,9 @@ std::vector<WorkspaceInAndOutProperties> WorkspacePropertiesStrategist::createSt
         childWorkspaceName = outputWsNameBase + "_" + providedName;
       }
 
-      // TODO check for if the output propery is overiting an input (and work out how to handle that)
-      // TODO make this neater, copy over things from algorithm.cpp? (if not used elsewhere?)
       const auto matchingInputPropertyInfo =
           std::find_if(m_inputWorkspaceProperties.cbegin(), m_inputWorkspaceProperties.cend(),
-                       [&providedName](const auto &inputPropertyInfo) {
-                         if (const auto prop = dynamic_cast<Property *>(inputPropertyInfo.inputProperty)) {
-                           return prop->value() == providedName;
-                         }
-                         return false;
-                       });
+                       WorkspacePropertyValueIs(providedName));
       if (matchingInputPropertyInfo != m_inputWorkspaceProperties.cend()) {
         const auto &unrolledWorkspaces = matchingInputPropertyInfo->unrolledWorkspaces;
         childWorkspaceName = unrolledWorkspaces[i]->getName();
@@ -207,9 +214,10 @@ WorkspacePropertiesStrategist::collateInputWorkspaceInfo(const WorkspaceProperti
         // Single Workspace. Treat it as a "group" with only one member
         inputInfo.unrolledWorkspaces = std::vector<std::shared_ptr<Workspace>>{ws};
       } else if (wsGroup) {
+        // Workspace group set to a WorkspaceProperty<WorkspaceGroup> property
         inputInfo.unrolledWorkspaces = std::vector<std::shared_ptr<Workspace>>{wsGroup};
       } else {
-        // should this be an error case?
+        // Unset input
         inputInfo.unrolledWorkspaces = std::vector<std::shared_ptr<Workspace>>{};
       }
     }
