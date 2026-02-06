@@ -42,7 +42,7 @@ from sans.common.general_functions import (
     get_output_name,
     is_part_of_reduced_output_workspace_group,
 )
-from mantidqtinterfaces.sans_isis.gui_logic.models.RowEntries import RowEntries
+from sans.data_objects.row_entries import RowEntries
 from sans.sans_batch import SANSBatchReduction, SANSCentreFinder
 
 # ----------------------------------------------------------------------------------------------------------------------
