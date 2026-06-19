@@ -52,10 +52,7 @@ def get_current_run_filename(instrument, autosave=None):
     If instrument is supported, attempts to find the file on the ISIS network which
     contains the data from its current (most up-to-date) run.
     """
-    if autosave:
-        autosave_file_name = autosave
-    else:
-        autosave_file_name = get_autosave_file_path(instrument)
+    autosave_file_name = autosave or get_autosave_file_path(instrument)
 
     autosave_file_path = Path(autosave_file_name)
     autosave_directory = autosave_file_path.parent
