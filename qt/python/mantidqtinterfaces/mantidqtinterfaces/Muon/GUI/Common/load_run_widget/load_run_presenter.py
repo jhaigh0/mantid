@@ -30,9 +30,9 @@ class LoadRunWidgetPresenter(object):
         self._instrument = self._model.instrument
         self._view.set_current_instrument(self._instrument)
         if is_windows():
-            self._view.set_autosave_file_path(file_utils.get_autosave_file_path(self._instrument))
-            self._view.autosave_file_path_edit.setStyleSheet("background: #d7d6d5;")
-            self._view.autosave_file_path_edit.setReadOnly(True)
+            self.set_autosave_file_path(file_utils.get_autosave_file_path(self._instrument))
+        else:
+            self.set_autosave_file_path("")
 
         self.run_list = []
 
@@ -69,7 +69,7 @@ class LoadRunWidgetPresenter(object):
             self._view.enable_load_buttons()
         self._instrument = instrument
         if is_windows():
-            self._view.set_autosave_file_path(file_utils.get_autosave_file_path(self._instrument))
+            self.set_autosave_file_path(file_utils.get_autosave_file_path(self._instrument))
         self._view.set_current_instrument(instrument)
 
     def disable_loading(self):
@@ -83,6 +83,13 @@ class LoadRunWidgetPresenter(object):
     def clear_loaded_data(self):
         self._view.clear()
         self._model.clear_loaded_data()
+
+    def set_autosave_file_path(self, file_path):
+        self._view.set_autosave_file_path(file_path)
+        if not file_path and not is_windows():
+            self._view.load_current_run_button.setEnabled(False)
+        else:
+            self._view.load_current_run_button.setEnabled(True)
 
     @property
     def workspaces(self):
@@ -146,7 +153,7 @@ class LoadRunWidgetPresenter(object):
         file_filter = "Autosave Run File (*.run)"
         filename = show_file_browser_and_return_selection(self._view, file_filter, [""], multiple_files=False)
         if filename:
-            self._view.set_autosave_file_path(filename[0])
+            self.set_autosave_file_path(filename[0])
 
     # ------------------------------------------------------------------------------------------------------------------
     # Loading from current run button

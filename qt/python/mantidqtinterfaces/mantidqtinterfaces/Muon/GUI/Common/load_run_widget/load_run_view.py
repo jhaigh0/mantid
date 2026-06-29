@@ -52,6 +52,9 @@ class LoadRunWidgetView(QtWidgets.QWidget):
         self.autosave_file_path_edit = QtWidgets.QLineEdit(self)
         self.autosave_file_path_edit.setToolTip("Set location of autosave.run")
         self.autosave_file_path_edit.setObjectName("autosaveFilePathEdit")
+        self.autosave_file_path_edit.setPlaceholderText("autosave.run file path not set")
+        self.autosave_file_path_edit.setStyleSheet("background: #d7d6d5;")
+        self.autosave_file_path_edit.setReadOnly(True)
 
         self.increment_run_button = QtWidgets.QToolButton(self)
         self.increment_run_button.setText(">")
