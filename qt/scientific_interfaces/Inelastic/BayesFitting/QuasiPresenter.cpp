@@ -48,7 +48,6 @@ void QuasiPresenter::handleSampleInputReady(std::string const &workspaceName) {
 
 void QuasiPresenter::handleResolutionInputReady(std::string const &workspaceName) {
   m_view->enableView(true);
-  m_view->enableUseResolution(m_model->isResolution(workspaceName));
   m_model->setResolution(workspaceName);
 }
 
@@ -137,17 +136,6 @@ void QuasiPresenter::handlePlotClicked() {
 void QuasiPresenter::handleValidation(IUserInputValidator *validator) const {
   validator->checkDataSelectorIsValid("Sample", m_view->sampleSelector());
   validator->checkDataSelectorIsValid("Resolution", m_view->resolutionSelector());
-
-  // check that the ResNorm file is valid if we are using it
-  if (m_view->useResolution()) {
-    validator->checkDataSelectorIsValid("ResNorm", m_view->resNormSelector());
-  }
-
-  // check fixed width file exists
-  auto const *fixWidthFinder = m_view->fixWidthFileFinder();
-  if (m_view->fixWidth() && !fixWidthFinder->isValid()) {
-    validator->checkFileFinderWidgetIsValid("Width", fixWidthFinder);
-  }
 
   // check eMin and eMax values
   if (m_view->eMin() >= m_view->eMax())

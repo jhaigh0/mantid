@@ -80,8 +80,6 @@ public:
   MOCK_METHOD(IRunView *, getRunView, (), (const, override));
   MOCK_METHOD(MantidWidgets::DataSelector *, sampleSelector, (), (const, override));
   MOCK_METHOD(MantidWidgets::DataSelector *, resolutionSelector, (), (const, override));
-  MOCK_METHOD(MantidWidgets::DataSelector *, resNormSelector, (), (const, override));
-  MOCK_METHOD(API::FileFinderWidget *, fixWidthFileFinder, (), (const, override));
   MOCK_METHOD(void, setPreviewSpectrumMax, (std::size_t const max), (override));
   MOCK_METHOD(void, setXRange, ((std::pair<double, double> const &range)), (override));
   MOCK_METHOD(void, watchADS, (bool const watch), (override));
@@ -94,8 +92,6 @@ public:
   MOCK_METHOD(std::size_t, previewSpectrum, (), (const, override));
   MOCK_METHOD(std::string, sampleName, (), (const, override));
   MOCK_METHOD(std::string, resolutionName, (), (const, override));
-  MOCK_METHOD(std::string, resNormName, (), (const, override));
-  MOCK_METHOD(std::string, fixWidthName, (), (const, override));
   MOCK_METHOD(std::string, programName, (), (const, override));
   MOCK_METHOD(std::string, backgroundName, (), (const, override));
   MOCK_METHOD(std::string, plotName, (), (const, override));
@@ -103,13 +99,9 @@ public:
   MOCK_METHOD(double, eMax, (), (const, override));
   MOCK_METHOD(int, sampleBinning, (), (const, override));
   MOCK_METHOD(int, resolutionBinning, (), (const, override));
-  MOCK_METHOD(bool, useResolution, (), (const, override));
-  MOCK_METHOD(bool, fixWidth, (), (const, override));
   MOCK_METHOD(bool, elasticPeak, (), (const, override));
-  MOCK_METHOD(bool, sequentialFit, (), (const, override));
   MOCK_METHOD(void, setPlotResultEnabled, (bool const enable), (override));
   MOCK_METHOD(void, setSaveResultEnabled, (bool const enable), (override));
-  MOCK_METHOD(void, enableUseResolution, (bool const enable), (override));
   MOCK_METHOD(void, enableView, (bool const enable), (override));
   MOCK_METHOD(bool, displaySaveDirectoryMessage, (), (const, override));
   MOCK_METHOD(void, setFileExtensionsByName, (bool const filter), (override));

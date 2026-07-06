@@ -36,8 +36,6 @@ public:
   virtual IRunView *getRunView() const = 0;
   virtual MantidWidgets::DataSelector *sampleSelector() const = 0;
   virtual MantidWidgets::DataSelector *resolutionSelector() const = 0;
-  virtual MantidWidgets::DataSelector *resNormSelector() const = 0;
-  virtual API::FileFinderWidget *fixWidthFileFinder() const = 0;
 
   virtual void setPreviewSpectrumMax(std::size_t const max) = 0;
   virtual void setXRange(std::pair<double, double> const &range) = 0;
@@ -51,8 +49,6 @@ public:
 
   virtual std::string sampleName() const = 0;
   virtual std::string resolutionName() const = 0;
-  virtual std::string resNormName() const = 0;
-  virtual std::string fixWidthName() const = 0;
   virtual std::string programName() const = 0;
   virtual std::string backgroundName() const = 0;
   virtual std::string plotName() const = 0;
@@ -62,16 +58,10 @@ public:
 
   virtual int sampleBinning() const = 0;
   virtual int resolutionBinning() const = 0;
-
-  virtual bool useResolution() const = 0;
-  virtual bool fixWidth() const = 0;
   virtual bool elasticPeak() const = 0;
-  virtual bool sequentialFit() const = 0;
 
   virtual void setPlotResultEnabled(bool const enable) = 0;
   virtual void setSaveResultEnabled(bool const enable) = 0;
-
-  virtual void enableUseResolution(bool const enable) = 0;
   virtual void enableView(bool const enable) = 0;
 
   virtual bool displaySaveDirectoryMessage() const = 0;
@@ -93,8 +83,6 @@ public:
   IRunView *getRunView() const override;
   MantidWidgets::DataSelector *sampleSelector() const override;
   MantidWidgets::DataSelector *resolutionSelector() const override;
-  MantidWidgets::DataSelector *resNormSelector() const override;
-  API::FileFinderWidget *fixWidthFileFinder() const override;
 
   void setPreviewSpectrumMax(std::size_t const max) override;
   void setXRange(std::pair<double, double> const &range) override;
@@ -108,8 +96,6 @@ public:
 
   std::string sampleName() const override;
   std::string resolutionName() const override;
-  std::string resNormName() const override;
-  std::string fixWidthName() const override;
   std::string programName() const override;
   std::string backgroundName() const override;
   std::string plotName() const override;
@@ -119,16 +105,11 @@ public:
 
   int sampleBinning() const override;
   int resolutionBinning() const override;
-
-  bool useResolution() const override;
-  bool fixWidth() const override;
   bool elasticPeak() const override;
-  bool sequentialFit() const override;
 
   void setPlotResultEnabled(bool const enable) override;
   void setSaveResultEnabled(bool const enable) override;
 
-  void enableUseResolution(bool const enable) override;
   void enableView(bool const enable) override;
 
   bool displaySaveDirectoryMessage() const override;

@@ -52,7 +52,6 @@ StretchView::StretchView(QWidget *parent)
   setupPlotOptions();
 
   connect(m_uiForm.dsSample, &DataSelector::dataReady, this, &StretchView::handleSampleInputReady);
-  connect(m_uiForm.chkSequentialFit, &QCheckBox::toggled, m_uiForm.cbPlot, &QComboBox::setEnabled);
 
   connect(m_uiForm.spPreviewSpectrum, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
           &StretchView::previewSpecChanged);
@@ -110,7 +109,6 @@ void StretchView::setupFitOptions() {
   m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::LINEAR));
   m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::FLAT));
   m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::ZERO));
-  m_uiForm.chkSequentialFit->hide();
 }
 
 void StretchView::setupPropertyBrowser() {

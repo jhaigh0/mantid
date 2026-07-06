@@ -64,9 +64,6 @@ QuasiView::QuasiView(QWidget *parent)
   connect(eRangeSelector, &MantidWidgets::RangeSelector::minValueChanged, this, &QuasiView::minEValueChanged);
   connect(eRangeSelector, &MantidWidgets::RangeSelector::maxValueChanged, this, &QuasiView::maxEValueChanged);
 
-  connect(m_uiForm.chkFixWidth, &QCheckBox::toggled, m_uiForm.mwFixWidthDat, &FileFinderWidget::setEnabled);
-  connect(m_uiForm.chkUseResNorm, &QCheckBox::toggled, m_uiForm.dsResNorm, &DataSelector::setEnabled);
-
   connect(m_uiForm.dsSample, &DataSelector::dataReady, this, &QuasiView::notifySampleInputReady);
   connect(m_uiForm.dsSample, &DataSelector::filesAutoLoaded, this, &QuasiView::notifyFileAutoLoaded);
 
@@ -96,23 +93,11 @@ DataSelector *QuasiView::sampleSelector() const { return m_uiForm.dsSample; }
 
 DataSelector *QuasiView::resolutionSelector() const { return m_uiForm.dsResolution; }
 
-DataSelector *QuasiView::resNormSelector() const { return m_uiForm.dsResNorm; }
-
-FileFinderWidget *QuasiView::fixWidthFileFinder() const { return m_uiForm.mwFixWidthDat; }
-
 void QuasiView::setupFitOptions() {
   m_uiForm.cbBackground->clear();
   m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::LINEAR));
   m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::FLAT));
   m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::ZERO));
-
-  m_uiForm.chkFixWidth->hide();
-  m_uiForm.mwFixWidthDat->hide();
-
-  m_uiForm.chkUseResNorm->hide();
-  m_uiForm.dsResNorm->hide();
-
-  m_uiForm.chkSequentialFit->hide();
 }
 
 void QuasiView::setupPropertyBrowser() {
@@ -239,10 +224,6 @@ std::string QuasiView::sampleName() const { return m_uiForm.dsSample->getCurrent
 
 std::string QuasiView::resolutionName() const { return m_uiForm.dsResolution->getCurrentDataName().toStdString(); }
 
-std::string QuasiView::resNormName() const { return m_uiForm.dsResNorm->getCurrentDataName().toStdString(); }
-
-std::string QuasiView::fixWidthName() const { return m_uiForm.mwFixWidthDat->getFirstFilename().toStdString(); }
-
 std::string QuasiView::programName() const { return m_uiForm.cbProgram->currentText().toStdString(); }
 
 std::string QuasiView::backgroundName() const { return m_uiForm.cbBackground->currentText().toStdString(); }
@@ -257,13 +238,7 @@ int QuasiView::sampleBinning() const { return m_properties["SampleBinning"]->val
 
 int QuasiView::resolutionBinning() const { return m_properties["ResBinning"]->valueText().toInt(); }
 
-bool QuasiView::useResolution() const { return m_uiForm.chkUseResNorm->isChecked(); }
-
-bool QuasiView::fixWidth() const { return m_uiForm.chkFixWidth->isChecked(); }
-
 bool QuasiView::elasticPeak() const { return m_uiForm.chkElasticPeak->isChecked(); }
-
-bool QuasiView::sequentialFit() const { return m_uiForm.chkSequentialFit->isChecked(); }
 
 void QuasiView::setPlotResultEnabled(bool const enable) {
   m_uiForm.pbPlot->setEnabled(enable);
@@ -271,12 +246,6 @@ void QuasiView::setPlotResultEnabled(bool const enable) {
 }
 
 void QuasiView::setSaveResultEnabled(bool const enable) { m_uiForm.pbSave->setEnabled(enable); }
-
-void QuasiView::enableUseResolution(bool const enable) {
-  m_uiForm.chkUseResNorm->setEnabled(enable);
-  if (!enable)
-    m_uiForm.chkUseResNorm->setChecked(false);
-}
 
 void QuasiView::enableView(bool const enable) {
   m_uiForm.dsSample->setEnabled(enable);
@@ -304,14 +273,11 @@ void QuasiView::setFileExtensionsByName(bool const filter) {
 void QuasiView::setLoadHistory(bool const loadHistory) {
   m_uiForm.dsSample->setLoadProperty("LoadHistory", loadHistory);
   m_uiForm.dsResolution->setLoadProperty("LoadHistory", loadHistory);
-  m_uiForm.dsResNorm->setLoadProperty("LoadHistory", loadHistory);
 }
 
 void QuasiView::loadSettings(const QSettings &settings) {
   m_uiForm.dsSample->readSettings(settings.group());
   m_uiForm.dsResolution->readSettings(settings.group());
-  m_uiForm.dsResNorm->readSettings(settings.group());
-  m_uiForm.mwFixWidthDat->readSettings(settings.group());
 }
 
 } // namespace MantidQt::CustomInterfaces
