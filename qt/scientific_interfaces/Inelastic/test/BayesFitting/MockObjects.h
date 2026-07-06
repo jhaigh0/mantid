@@ -35,16 +35,15 @@ public:
   MOCK_METHOD(void, applySettings, ((std::map<std::string, QVariant> const &settings)), (override));
   MOCK_METHOD(void, validateUserInput, (IUserInputValidator * validator), (const, override));
 
-  MOCK_METHOD(StretchRunData, getRunData, (bool useQuickBayes), (const, override));
+  MOCK_METHOD(StretchRunData, getRunData, (), (const, override));
   MOCK_METHOD(CurrentPreviewData, getCurrentPreviewData, (), (const, override));
   MOCK_METHOD(std::string, getPlotType, (), (const, override));
   MOCK_METHOD(std::string, getPlotContour, (), (const, override));
   MOCK_METHOD(IRunView *, getRunWidget, (), (const, override));
 
-  MOCK_METHOD(void, updateBackend, (bool useQuickBayes), (override));
-  MOCK_METHOD(void, setupFitOptions, (bool useQuickBayes), (override));
-  MOCK_METHOD(void, setupPropertyBrowser, (bool useQuickBayes), (override));
-  MOCK_METHOD(void, setupPlotOptions, (bool useQuickBayes), (override));
+  MOCK_METHOD(void, setupFitOptions, (), (override));
+  MOCK_METHOD(void, setupPropertyBrowser, (), (override));
+  MOCK_METHOD(void, setupPlotOptions, (), (override));
 
   MOCK_METHOD(void, setFileExtensionsByName, (bool filter), (override));
   MOCK_METHOD(void, setLoadHistory, (bool doLoadHistory), (override));
@@ -67,7 +66,7 @@ public:
 
   MOCK_METHOD(MantidQt::API::IConfiguredAlgorithm_sptr, stretchAlgorithm,
               ((const StretchRunData &algParams), const std::string &fitWorkspaceName,
-               const std::string &contourWorkspaceName, const bool useQuickBayes),
+               const std::string &contourWorkspaceName),
               (const, override));
 
   MOCK_METHOD(API::IConfiguredAlgorithm_sptr, setupSaveAlgorithm, (const std::string &wsName), (const, override));
@@ -116,7 +115,6 @@ public:
   MOCK_METHOD(void, setFileExtensionsByName, (bool const filter), (override));
   MOCK_METHOD(void, setLoadHistory, (bool const loadHistory), (override));
   MOCK_METHOD(void, loadSettings, (const QSettings &settings), (override));
-  MOCK_METHOD(void, updateBackend, (bool useQuickBayes), (override));
 };
 
 class MockQuasiModel : public IQuasiModel {
@@ -141,13 +139,6 @@ public:
   MOCK_METHOD(bool, isResolution, (std::string const &workspaceName), (const, override));
 
   MOCK_METHOD(std::optional<std::string>, curveColour, (std::string const &label), (const, override));
-
-  MOCK_METHOD(API::IConfiguredAlgorithm_sptr, setupBayesQuasiAlgorithm,
-              (std::string const &resNormName, std::string const &fixWidthName, std::string const &program,
-               std::string const &baseName, std::string const &background, double const eMin, double const eMax,
-               int const sampleBinning, int const resolutionBinning, bool const elasticPeak, bool const fixWidth,
-               bool const useResNorm, bool const sequentialFit),
-              (const, override));
 
   MOCK_METHOD(API::IConfiguredAlgorithm_sptr, setupBayesQuasi2Algorithm,
               (std::string const &program, std::string const &baseName, std::string const &background,

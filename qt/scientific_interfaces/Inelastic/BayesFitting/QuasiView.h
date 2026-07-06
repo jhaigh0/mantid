@@ -80,14 +80,13 @@ public:
   virtual void setLoadHistory(bool const loadHistory) = 0;
 
   virtual void loadSettings(const QSettings &settings) = 0;
-  virtual void updateBackend(bool useQuickBayes) = 0;
 };
 
 class QuasiView final : public QWidget, public IQuasiView {
   Q_OBJECT
 
 public:
-  QuasiView(QWidget *parent = nullptr, bool useQuickBayes = true);
+  QuasiView(QWidget *parent = nullptr);
   ~QuasiView() override = default;
 
   void subscribe(IQuasiPresenter *presenter) override;
@@ -138,7 +137,6 @@ public:
   void setLoadHistory(bool const loadHistory) override;
 
   void loadSettings(const QSettings &settings) override;
-  void updateBackend(bool useQuickBayes) override;
 
 private slots:
   void minEValueChanged(double const min);
@@ -158,9 +156,9 @@ private slots:
   void notifyPlotClicked();
 
 private:
-  void setupFitOptions(bool useQuickBayes);
-  void setupPropertyBrowser(bool useQuickBayes);
-  void setupPlotOptions(bool useQuickBayes);
+  void setupFitOptions();
+  void setupPropertyBrowser();
+  void setupPlotOptions();
 
   Ui::Quasi m_uiForm;
 

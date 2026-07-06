@@ -50,13 +50,15 @@ QColor toQColor(std::string const &colour) {
 namespace MantidQt::CustomInterfaces {
 using namespace InterfaceUtils;
 
-QuasiView::QuasiView(QWidget *parent, bool useQuickBayes)
+QuasiView::QuasiView(QWidget *parent)
     : QWidget(parent), m_dblManager(new QtDoublePropertyManager()), m_propTree(new QtTreePropertyBrowser()),
       m_properties(), m_dblEditorFactory(new DoubleEditorFactory()), m_presenter() {
   m_uiForm.setupUi(parent);
 
   m_propTree->setFactoryForManager(m_dblManager, m_dblEditorFactory);
-  updateBackend(useQuickBayes);
+  setupFitOptions();
+  setupPropertyBrowser();
+  setupPlotOptions();
 
   auto eRangeSelector = m_uiForm.ppPlot->addRangeSelector("QuasiERange");
   connect(eRangeSelector, &MantidWidgets::RangeSelector::minValueChanged, this, &QuasiView::minEValueChanged);
@@ -98,42 +100,22 @@ DataSelector *QuasiView::resNormSelector() const { return m_uiForm.dsResNorm; }
 
 FileFinderWidget *QuasiView::fixWidthFileFinder() const { return m_uiForm.mwFixWidthDat; }
 
-void QuasiView::updateBackend(bool useQuickBayes) {
-  setupFitOptions(useQuickBayes);
-  setupPropertyBrowser(useQuickBayes);
-  setupPlotOptions(useQuickBayes);
-}
-
-void QuasiView::setupFitOptions(bool useQuickBayes) {
+void QuasiView::setupFitOptions() {
   m_uiForm.cbBackground->clear();
-  if (useQuickBayes) {
-    m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::LINEAR));
-    m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::FLAT));
-    m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::ZERO));
+  m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::LINEAR));
+  m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::FLAT));
+  m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::ZERO));
 
-    m_uiForm.chkFixWidth->hide();
-    m_uiForm.mwFixWidthDat->hide();
+  m_uiForm.chkFixWidth->hide();
+  m_uiForm.mwFixWidthDat->hide();
 
-    m_uiForm.chkUseResNorm->hide();
-    m_uiForm.dsResNorm->hide();
+  m_uiForm.chkUseResNorm->hide();
+  m_uiForm.dsResNorm->hide();
 
-    m_uiForm.chkSequentialFit->hide();
-  } else {
-    m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::SLOPING));
-    m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::FLAT));
-    m_uiForm.cbBackground->addItem(QString::fromStdString(BackgroundType::ZERO));
-
-    m_uiForm.chkFixWidth->show();
-    m_uiForm.mwFixWidthDat->show();
-
-    m_uiForm.dsResNorm->show();
-    m_uiForm.chkUseResNorm->show();
-
-    m_uiForm.chkSequentialFit->show();
-  }
+  m_uiForm.chkSequentialFit->hide();
 }
 
-void QuasiView::setupPropertyBrowser(bool useQuickBayes) {
+void QuasiView::setupPropertyBrowser() {
   auto const EMin = m_properties.contains("EMin") ? m_properties["EMin"]->valueText().toDouble() : 0.0;
   auto const EMax = m_properties.contains("EMax") ? m_properties["EMax"]->valueText().toDouble() : 0.0;
 
@@ -153,37 +135,15 @@ void QuasiView::setupPropertyBrowser(bool useQuickBayes) {
   m_propTree->addProperty(m_properties["EMin"]);
   m_propTree->addProperty(m_properties["EMax"]);
 
-  if (!useQuickBayes) {
-    m_properties["SampleBinning"] = m_dblManager->addProperty("Sample Binning");
-    m_properties["ResBinning"] = m_dblManager->addProperty("Resolution Binning");
-
-    m_dblManager->setDecimals(m_properties["SampleBinning"], INT_DECIMALS);
-    m_dblManager->setDecimals(m_properties["ResBinning"], INT_DECIMALS);
-
-    m_propTree->addProperty(m_properties["SampleBinning"]);
-    m_propTree->addProperty(m_properties["ResBinning"]);
-
-    m_dblManager->setValue(m_properties["SampleBinning"], 1);
-    m_dblManager->setMinimum(m_properties["SampleBinning"], 1);
-    m_dblManager->setValue(m_properties["ResBinning"], 1);
-    m_dblManager->setMinimum(m_properties["ResBinning"], 1);
-  }
   InterfaceUtils::formatTreeWidget(m_propTree, m_properties);
 }
 
-void QuasiView::setupPlotOptions(bool useQuickBayes) {
+void QuasiView::setupPlotOptions() {
   m_uiForm.cbPlot->clear();
-  if (useQuickBayes) {
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::ALL));
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::AMPLITUDE));
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::GAMMA));
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::PROB));
-  } else {
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::ALL));
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::AMPLITUDE));
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::FWHM));
-    m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::PROB));
-  }
+  m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::ALL));
+  m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::AMPLITUDE));
+  m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::GAMMA));
+  m_uiForm.cbPlot->addItem(QString::fromStdString(PlotType::PROB));
 }
 
 void QuasiView::notifySampleInputReady(QString const &workspaceName) {
