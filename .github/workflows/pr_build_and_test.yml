@@ -49,6 +49,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          path: source
 
       - uses: dorny/paths-filter@v4
         id: changes
@@ -62,7 +64,7 @@ jobs:
         if: ${{ steps.changes.outputs.code_changes == 'true' }}
         run: |
           rm -rf ${GITHUB_WORKSPACE}/conda-bld
-          bash -ex ${GITHUB_WORKSPACE}/buildconfig/Jenkins/Conda/package-conda ${GITHUB_WORKSPACE} --build-mantid --build-qt --build-docs --build-workbench
+          bash -ex ${GITHUB_WORKSPACE}/source/buildconfig/Jenkins/Conda/package-conda ${GITHUB_WORKSPACE} --build-mantid --build-qt --build-docs --build-workbench
 
       - name: Upload conda packages
         uses: actions/upload-artifact@v7
