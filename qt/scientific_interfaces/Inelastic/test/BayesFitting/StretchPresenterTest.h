@@ -118,8 +118,8 @@ public:
 
     auto const cutIndex = runData.sampleName.find_last_of("_");
     auto const baseName = runData.sampleName.substr(0, cutIndex);
-    auto fitWorkspaceName = baseName + "_Stretch_Fit_QuickBayes";
-    auto contourWorkspaceName = baseName + "_Stretch_Contour_QuickBayes";
+    auto fitWorkspaceName = baseName + "_Stretch_Fit";
+    auto contourWorkspaceName = baseName + "_Stretch_Contour";
 
     ads.addOrReplace(fitWorkspaceName, m_workspace);
     ads.addOrReplace(contourWorkspaceName, m_workspace);

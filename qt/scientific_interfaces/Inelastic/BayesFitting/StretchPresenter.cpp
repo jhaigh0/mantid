@@ -51,9 +51,8 @@ void StretchPresenter::handleRun() {
 
   auto const cutIndex = algParams.sampleName.find_last_of("_");
   auto const baseName = algParams.sampleName.substr(0, cutIndex);
-  auto const fitSuffix = "_QuickBayes";
-  m_fitWorkspaceName = baseName + "_Stretch_Fit" + fitSuffix;
-  m_contourWorkspaceName = baseName + "_Stretch_Contour" + fitSuffix;
+  m_fitWorkspaceName = baseName + "_Stretch_Fit";
+  m_contourWorkspaceName = baseName + "_Stretch_Contour";
 
   auto stretch = m_model->stretchAlgorithm(algParams, m_fitWorkspaceName, m_contourWorkspaceName);
   m_algorithmRunner->execute(stretch);

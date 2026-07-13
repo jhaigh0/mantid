@@ -173,7 +173,7 @@ void QuasiPresenter::handleRun() {
   // Construct an output base name for the output workspaces
   auto const resType = resolutionName.substr(resolutionName.length() - 3);
   auto const programName = program == "QL" ? resType == "res" ? "QLr" : "QLd" : program;
-  auto const baseName = sampleName.substr(0, sampleName.length() - 3) + programName + "_quickbayes";
+  auto const baseName = sampleName.substr(0, sampleName.length() - 3) + programName;
 
   API::IConfiguredAlgorithm_sptr bayesQuasiAlgorithm;
   bayesQuasiAlgorithm =
