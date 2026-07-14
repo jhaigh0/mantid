@@ -27,7 +27,6 @@ static const std::string TAB_NAME = "Quasi";
 struct PlotType {
   inline static const std::string ALL = "All";
   inline static const std::string AMPLITUDE = "Amplitude";
-  inline static const std::string FWHM = "FWHM";
   inline static const std::string PROB = "Prob";
   inline static const std::string GAMMA = "Gamma";
 };

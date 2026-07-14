@@ -21,7 +21,6 @@ static const unsigned int INT_DECIMALS = 0;
 Mantid::Kernel::Logger g_log("Stretch");
 
 struct BackgroundType {
-  inline static const std::string SLOPING = "Sloping";
   inline static const std::string FLAT = "Flat";
   inline static const std::string ZERO = "Zero";
   inline static const std::string LINEAR = "Linear";
@@ -29,7 +28,6 @@ struct BackgroundType {
 
 struct PlotType {
   inline static const std::string ALL = "All";
-  inline static const std::string SIGMA = "Sigma";
   inline static const std::string BETA = "Beta";
   inline static const std::string FWHM = "FWHM";
 };
